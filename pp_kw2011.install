@@ -1,0 +1,71 @@
+<?php
+
+/**
+ * Implementation of hook_schema().
+ */
+function pp_kw2011_schema() {
+  $schema['pp_kw2011'] = array(
+    'description' => t("Stores available local elections bars."),
+    'fields' => array(
+      'id' => array(
+        'description' => t("Unique identifier for each {pp_kw2011} local elections bar."),
+        'type' => 'serial',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ),
+      'title' => array(
+        'description' => t("Name of the {pp_kw2011} local elections bar."),
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => FALSE,
+      ),
+      'current' => array(
+        'description' => t("Current signatures of the {pp_kw2011} local elections bar."),
+        'type' => 'int',
+        'not null' => FALSE,
+      ),
+      'max' => array(
+        'description' => t("Max signatures of the {pp_kw2011} local elections bar."),
+        'type' => 'int',
+        'not null' => FALSE,
+      ),
+      'save' => array(
+        'description' => t("Signed signatures of the {pp_kw2011} local elections bar."),
+        'type' => 'int',
+        'not null' => FALSE,
+      ),
+      'pdf_uu' => array(
+        'description' => t("The PDF-UU-Link of the {pp_kw2011} local elections bar."),
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => FALSE,
+      ),
+      'pdf_wp' => array(
+        'description' => t("The PDF-WP-Link of the {pp_kw2011} local elections bar."),
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => FALSE,
+      ),
+    ),
+    'indexes' => array('title' => array('title')),
+    'primary key' => array('id'),
+  );
+
+  return $schema;
+}
+
+/**
+ * Implementation of hook_install().
+ */
+function pp_kw2011_install() {
+  // Create tables.
+  drupal_install_schema('pp_kw2011');
+}
+
+/**
+ * Implementation of hook_uninstall().
+ */
+function pp_kw2011_uninstall() {
+  // Remove tables.
+  drupal_uninstall_schema('pp_kw2011');
+}

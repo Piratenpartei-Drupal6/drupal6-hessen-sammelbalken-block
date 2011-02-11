@@ -1,0 +1,424 @@
+<?php
+
+/**
+*
+*/
+function pp_kw2011_init() {
+	// paths
+		$module_path = drupal_get_path('module', 'pp_kw2011');
+		$css_path = $module_path.'/pp_kw2011.css';
+
+	// load css
+		$css = drupal_add_css($css_path);
+		#print_r($css);
+}
+
+
+/**
+* Menu for this module
+* @return array An array with this module's settings.
+*/
+function pp_kw2011_menu() {
+	// items
+		$items = array();
+
+	// export json
+		$items['export/uu/kw2011'] = array(
+			'title' => 'JSON export',
+			'description' => 'KW2011 UU JSON export',
+			'page callback' => 'pp_kw2011_export',
+			'page arguments' => array('mode'),
+			'access arguments' => array('access content'),
+			'type' => MENU_CALLBACK,
+		);
+
+	// return
+		return $items;
+}
+
+
+/**
+*
+*/
+function pp_kw2011_export($param, $arg) {
+	// export
+		if ($param == "mode" && $arg == "json") {
+			$sql = "SELECT * FROM {pp_kw2011} ORDER BY `title`";
+			$results = db_query($sql);
+
+			$json = array();
+			while ($info = db_fetch_array($results)) {
+				array_push($json, $info);
+			}
+			echo json_encode($json);
+		}
+}
+
+
+/**
+* Display help and module information.
+* @param path
+*   Which path of the site we're displaying help.
+* @param arg
+*   Array that holds the current path as would be returned from arg() function.
+* @return
+*   help text for the path.
+*/
+function pp_kw2011_help($path, $arg) {
+  $output = '';
+  switch ($path) {
+    case "admin/help#pp_kw2011":
+      $output = '<p>'. t("Zeigt den Block für die Kommunalwahl 2011 in Hessen").'</p>';
+      break;
+  }
+  return $output;
+} // function pp_kw2011_help
+
+
+/**
+* Valid permissions for this module
+* @return array An array of valid permissions for the pp_hessen module
+*/
+
+function pp_kw2011_perm() {
+  return array('access pp_kw2011 content');
+} // function pp_kw2011_perm()
+
+
+/**
+* Generate HTML for the pp_hessen block
+* @param op the operation from the URL
+* @param delta offset
+* @returns block HTML
+*/
+function pp_kw2011_block($op='list', $delta=0) {
+	// listing of blocks, such as on the admin/block page
+		if ($op == "list") {
+			$block[0]["info"] = t('Kommunalwahl 2011');
+			return $block;
+		} else if ($op == 'view') {
+			// get data
+				$sql = "SELECT * FROM {pp_kw2011} ORDER BY `title`";
+				$results = db_query($sql);
+
+				$module_path = drupal_get_path('module', 'pp_kw2011');
+				$img = "<img src='".$module_path.'/pp_kw2011.gif'."' alt='' width='1' height='1' />";
+
+				$block_content = '<ul class="sammlung">';
+				while ($info = db_fetch_array($results)) {
+					$name = $info["title"];
+					$name2 = "&nbsp;";
+					if (strlen($name) > 25) {
+						$t = explode(" ", $name);
+						$name = array_shift($t);
+						$name = pp_kw2011_cleanTitle($name, false);
+						$name2 = implode(" ", $t);
+						$name2 = trim($name2);
+						if (empty($name2))
+							$name2 = "&nbsp;";
+					}
+
+					$percentage = intval($info["current"]/$info["max"] * 10000)/100;
+					$percentage_bar = $percentage;
+					if ($percentage_bar > 100) {
+						$percentage = "Puffer: ".($info["current"] - $info["max"]);
+						$percentage_bar = 100;
+					} else {
+						$percentage .= " %";
+					}
+
+					$uu = "<a class='none' href='#' onclick='javascript:void(0); return false;' title=''></a>";
+					if (isset($info["pdf_uu"]))
+						$uu = "<a href='".$info["pdf_uu"]."' title='Unterst&uuml;tzungsunterschrift'>".$img."</a>";
+
+					$wp = "<a class='none' href='#' onclick='javascript:void(0); return false;' title=''></a>";
+					if (isset($info["pdf_wp"]))
+						$wp = "<a href='".$info["pdf_wp"]."' title='Wahlprogramm'>".$img."</a>";
+
+					$block_content .= '<li><ul class="sammelbalken">';
+					$block_content .= '<li><span class="wp">'.$wp.'</span><span class="uu">'.$uu.'</span>'.$name.'</li>';
+					$block_content .= '<li class="balken"><div style="width: '.$percentage_bar.'%"></div><span>'.$percentage.'</span></li>';
+					$block_content .= '<li>'.$name2.'</li>';
+					$block_content .= '</ul></li>';
+				}
+				$block_content .= '</ul>';
+
+				$script = <<<EOT
+<!--[if lt IE 8]>
+<style>
+ul.sammlung li {
+	zoom: 1;
+	*display:inline;
+}
+
+ul.sammelbalken li.balken div {
+	zoom: 1;
+	*display:inline;
+}
+
+ul.sammelbalken li .uu,
+ul.sammelbalken li .wp {
+	zoom: 1;
+	*display:inline;
+}
+
+ul.sammelbalken li .uu a,
+ul.sammelbalken li .wp a {
+	zoom: 1;
+	*display:inline;
+}
+</style>
+<![endif]-->
+
+<script type="text/javascript">
+<!--//--><![CDATA[//><!--
+	$(document).ready(function() {
+		$("li.balken").each(function(index, value) {
+			var span =  $(value).children("span");
+			var delta = span.position().left+span.width() - ($(value).position().left+$(value).width());
+			if (delta > 0)
+				span.css("margin-left", -1*delta - 7);
+		});
+/*
+		var parent = $("li.balken:first").parents("div.sticky")
+		var inline = parent.find("ul.inline");
+		inline.append('<li class="node_read_more"><a title="Kommunalwahl 2011" href="/content/kommunalwahl-2011">Weiterlesen</a></li>');
+		inline.children("li.statistics_counter").remove();
+*/
+	});
+//--><!]]>
+</script>
+EOT;
+				$block_content .= $script;
+
+			// our block content
+				$block['subject'] = 'Kommunalwahl 2011';
+				$block['content'] = $block_content;
+				return $block;
+		}
+}
+
+
+/**
+*
+*/
+function pp_kw2011_cron() {
+	// constants
+		define("WIKI", "http://wiki.piratenpartei.de");
+
+	// matches
+		$matches = array(
+					"offenbach am main"		=>	"offenbach stadt",
+					"offenbach land"		=>	"offenbach landkreis",
+		);
+
+	// load wiki source code
+		$ch = curl_init();
+		curl_setopt($ch, CURLOPT_URL,					WIKI."/wiki//index.php?title=HE:Kommunalwahl2011&action=edit");
+		curl_setopt($ch, CURLOPT_HEADER,				0);
+		curl_setopt($ch, CURLOPT_RETURNTRANSFER,		1);
+		curl_setopt($ch, CURLOPT_FOLLOWLOCATION,		1);
+		$data = curl_exec($ch);
+		curl_close($ch);
+		#print_r($data);
+
+	// extract textarea
+		preg_match_all("/<textarea[^>]*>(.*)?<\/textarea>/si", $data, $regs);
+		#print_r($regs);
+		$data = $regs[1][0];
+		$data = utf8_decode($data);
+		#print_r($data);
+
+	// extract pdf links
+		$pdfs_wp = array();
+		$pdfs_uu = array();
+		$data3 = explode("|-", $data);
+		array_shift($data3);
+		array_pop($data3);
+		#print_r($data3);
+		foreach($data3 as $row) {
+			$row = rtrim($row);
+			$row = explode("\n|", $row);
+			#print_r($row);
+
+			// Title
+/*
+ * old without wiki link check
+			$title = pp_kw2011_cleanTitle($row[1]);
+			$title = utf8_encode($title);
+*/
+			$title = explode("|", $row[1]);
+			#print_r($title);
+			if (sizeof($title) == 1)
+				$title = $title[0];
+			else {
+				$title = explode("]", $title[1]);
+				$title = $title[0];
+			}
+			$title = pp_kw2011_cleanTitle($title);
+			$title = utf8_encode($title);
+			#echo $title."\n";
+
+			// Programm
+			$url = pp_kw2011_findPDF($row[4]);
+			if (!empty($url))
+				$pdfs_wp[$title] = $url;
+
+			// UUs
+			$url = pp_kw2011_findPDF($row[6]);
+			if (!empty($url))
+				$pdfs_uu[$title] = $url;
+		}
+		#print_r($pdfs_wp);
+		#print_r($pdfs_uu);
+		#die();
+
+	// find sammelbalken
+		$infos = array();
+		$url = WIKI."/wiki//index.php?title=XXX&action=edit";
+		preg_match_all("/{{RCBox-lightgrey\|{{\:?(.*)?}}}}/i", $data, $regs);
+		#print_r($regs);
+		foreach($regs[1] as $reg) {
+			// load wiki source code
+				$ch = curl_init();
+				curl_setopt($ch, CURLOPT_URL,				str_replace("XXX", $reg, $url));
+				curl_setopt($ch, CURLOPT_HEADER,			0);
+				curl_setopt($ch, CURLOPT_RETURNTRANSFER,	1);
+				curl_setopt($ch, CURLOPT_FOLLOWLOCATION,	1);
+				$data2 = curl_exec($ch);
+				curl_close($ch);
+				#print_r($data2);
+
+			// extract textarea
+				preg_match_all("/<textarea[^>]*>(.*)?<\/textarea>/si", $data2, $regs2);
+				#print_r($regs2);
+				$data2 = $regs2[1][0];
+				#$data2 = utf8_decode($data2);
+				#print_r($data2);
+
+			// extract infos
+				$info = array();
+				preg_match_all("/\|\s*Titel\s*\=\s*(.*)?\s*\(/i", $data2, $regs2);
+				#print_r($regs2);
+				foreach($regs2[1] as $id => $reg) {
+					$info[$id]["title"] = $reg;
+					$info[$id]["title"] = str_replace("_", " ", $info[$id]["title"]);
+				}
+
+				preg_match_all("/\|\s*ZuSammeln\s*\=\s*(.*)?\s*/i", $data2, $regs2);
+				#print_r($regs2);
+				foreach($regs2[1] as $id => $reg) {
+					$info[$id]["max"] = $reg;
+				}
+
+				preg_match_all("/\|\s*Gesammelt\s*\=\s*(.*)?\s*/i", $data2, $regs2);
+				#print_r($regs2);
+				foreach($regs2[1] as $id => $reg) {
+					$info[$id]["current"] = $reg;
+				}
+
+				preg_match_all("/\|\s*OK\s*\=\s*(.*)?\s*/i", $data2, $regs2);
+				#print_r($regs2);
+				foreach($regs2[1] as $id => $reg) {
+					$info[$id]["save"] = $reg;
+				}
+
+			// match pdf and add
+				foreach($info as $inf) {
+					$title = pp_kw2011_cleanTitle($inf["title"]);
+					#echo $title."\n";
+
+					pp_kw2011_matchPDF($matches, $inf, "pdf_wp", $pdfs_wp, $title);
+					pp_kw2011_matchPDF($matches, $inf, "pdf_uu", $pdfs_uu, $title);
+
+					array_push($infos, $inf);
+				}
+		}
+		#print_r($infos);
+
+	// sort
+		$sort = array();
+		foreach ($infos as $key => $info) {
+			$sort[$info["title"]] = $key;
+		}
+		ksort($sort);
+		$t = array();
+		foreach($sort as $key) {
+			array_push($t, $infos[$key]);
+		}
+		$infos = $t;
+		unset($t);
+		unset($sort);
+		#print_r($infos);
+
+	// save
+		db_query("TRUNCATE TABLE {pp_kw2011}");
+		foreach($infos as $id => $info) {
+			drupal_write_record("pp_kw2011", $info);
+		}
+}
+
+
+	// helper functions
+		function pp_kw2011_cleanTitle($title, $lower=true) {
+			$title = str_replace(",", "", $title);
+			$title = str_replace("-", " ", $title);
+			$title = str_replace("_", " ", $title);
+			$title = trim($title);
+			if ($lower)
+				$title = strtolower($title);
+			$title = explode("/", $title);
+			$title = $title[0];
+			$title = trim($title);
+
+			return $title;
+		}
+
+		function pp_kw2011_findPDF($text) {
+			$url = "";
+			#echo $text."\n";
+			#preg_match_all("/\[\[(.*)?\.pdf/", $text, $regs);
+			preg_match_all("/\[+([^\[]*)\.pdf/", $text, $regs);
+			#print_r($regs);
+			if (isset($regs[1][0])) {
+				$url = $regs[1][0].".pdf";
+
+				$ch = curl_init();
+				curl_setopt($ch, CURLOPT_URL,				WIKI."/".$url);
+				curl_setopt($ch, CURLOPT_HEADER,			0);
+				curl_setopt($ch, CURLOPT_RETURNTRANSFER,	1);
+				curl_setopt($ch, CURLOPT_FOLLOWLOCATION,	1);
+				$data2 = curl_exec($ch);
+				curl_close($ch);
+				#print_r($data2);
+
+				preg_match_all("/<a href=\"(\/wiki\/images\/[^>]*)?\">/i", $data2, $regs);
+				#print_r($regs);
+				if (isset($regs[1][0]))
+					$url = WIKI.$regs[1][0];
+			} else {
+				preg_match_all("/\[http(.*)?\.pdf/", $text, $regs);
+				#print_r($regs);
+				if (isset($regs[1][0])) {
+					$url = "http".$regs[1][0].".pdf";
+				}
+			}
+			return $url;
+		}
+
+		function pp_kw2011_matchPDF($matches, &$info, $selector, $pdf, $title) {
+			if (isset($pdf[$title])) {
+				$info[$selector] = $pdf[$title];
+			} else if (isset($pdf[$matches[$title]])) {
+				$info[$selector] = $pdf[$matches[$title]];
+			} else {
+				$title = explode(" ", $title);
+				$title = array_reverse($title);
+				$title = implode(" ", $title);
+				if (isset($pdf[$title])) {
+					$info[$selector] = $pdf[$title];
+				}
+			}
+		}
+
+?>

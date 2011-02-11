@@ -1,0 +1,79 @@
+ul.sammlung,
+ul.sammelbalken {
+	margin: 0;
+	padding: 0;
+	list-style-type: none;
+}
+
+ul.sammlung li {
+	width: 218px;
+	display: inline-block;
+	margin: 0 15px 2px 0;
+	padding: 0;
+	background: none;
+}
+
+ul.sammelbalken li {
+	display: block;
+	margin: 0;
+	padding: 0;
+	background: none;
+}
+
+ul.sammelbalken li.balken {
+	width: 216px;
+	border: 1px solid #808080;
+	height: 13px;
+	line-height: 13px;
+}
+
+ul.sammelbalken li.balken span {
+	font-size: 90%;
+	font-weight: bold;
+	padding-left: 4px;
+	position: absolute;
+	white-space: nowrap;
+}
+
+ul.sammelbalken li.balken div {
+	height: 13px;
+	background-image: url(balken.gif);
+	display: inline-block;
+}
+
+ul.sammelbalken li .uu,
+ul.sammelbalken li .wp {
+	float: right;
+	margin-left: 2px;
+	padding-top: 2px;
+}
+
+ul.sammelbalken li .uu a,
+ul.sammelbalken li .wp a {
+	width: 15px;
+	height: 15px;
+	display: inline-block;
+}
+
+ul.sammelbalken li .uu a.none,
+ul.sammelbalken li .uu a.none:hover {
+	background-position: 0 0;
+	background-repeat: no-repeat;
+}
+ul.sammelbalken li .uu a {
+	background: url(uu.png) 0 30px;
+}
+ul.sammelbalken li .uu a:hover {
+	background-position: 0 15px;
+}
+
+ul.sammelbalken li .wp a.none,
+ul.sammelbalken li .wp a.none:hover {
+	background-position: 0 0;
+}
+ul.sammelbalken li .wp a {
+	background: url(wp.png) 0 30px;
+}
+ul.sammelbalken li .wp a:hover {
+	background-position: 0 15px;
+}

@@ -1,0 +1,6 @@
+; $Id$
+name = Piratenpartei KW2011
+description = Block für die Kommunalwahl 2011 in Hessen
+dependencies[] = php
+core = 6.x
+version = "6.x-1.0"
